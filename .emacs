@@ -2,9 +2,9 @@
   (normal-top-level-add-subdirs-to-load-path))
 
 ;; add marlalade package repro (added because of slime-js)
- (require 'package)
- (add-to-list 'package-archives
- '("marmalade" . "http://marmalade-repo.org/packages/") t)
+(require 'package)
+(add-to-list 'package-archives
+             '("marmalade" . "http://marmalade-repo.org/packages/") t)
 (package-initialize)
 
 ;; sudo related
@@ -33,11 +33,11 @@
 
 ;; create an invisible backup directory and make the backups also invisable
 (defun make-backup-file-name (filename)
-(defvar backups-dir "~/.backups/")
-(make-directory backups-dir t)
-(expand-file-name
-(concat backups-dir "." (file-name-nondirectory filename) "~")
-(file-name-directory filename)))
+  (defvar backups-dir "~/.backups/")
+  (make-directory backups-dir t)
+  (expand-file-name
+   (concat backups-dir "." (file-name-nondirectory filename) "~")
+   (file-name-directory filename)))
 
 ;; Disable all version control
 (setq vc-handled-backends nil)
@@ -45,8 +45,26 @@
 
 ;; set indent size
 ;;(customize-variable (quote tab-stop-list))
-(setq-default tab-width 2) ; set tab width to 4 for all buffers
 (setq-default indent-tabs-mode nil) ; always replace tabs with spaces
+(setq-default indent-line-function 'insert-tab)
+(setq-default tab-stop-list (number-sequence 2 200 2))
+(setq-default tab-width 2)
+
+;; javascript settings. used a fork version of js2-mode, which has indent fix.
+;; source: git://github.com/mooz/js2-mode.git
+(autoload 'javascript-mode "javascript" nil t)
+(setq js-indent-level 2)
+(setq c-basic-offset tab-width)
+
+(autoload 'js2-mode "js2-mode" nil t)
+(setq js2-bounce-indent-p t)
+(setq js2-indent-on-enter-key nil)
+
+(add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
+(add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+(add-to-list 'auto-mode-alist '("\\.hbs$" . html-mode))
+(add-to-list 'auto-mode-alist '("\\.ftl$" . html-mode))
+(add-to-list 'auto-mode-alist '("buildfile" . ruby-mode))
 
 ;; customize find-grep
 (setq grep-find-command "find . -name 'target' -prune -o -name 'webapp*assets' -prune -o -name 'public' -prune -o -name 'cache' -prune -o -name '*' ! -name '*~' ! -name 'old-*.js' ! -name 'old-*.css' ! -name 'ext*.js' ! -name 'yui*.js' ! -name '*.dll' ! -name '*.pdb' -print0 | xargs -0 grep -H -n ")
@@ -58,7 +76,7 @@
 
 (global-set-key [f5] 'refresh-file)
 (global-set-key [(f1)] (lambda () (interactive) (manual-entry (current-word))))
-(global-set-key [f2] 'find-dired)
+(global-set-key [f2] 'find-name-dired)
 (global-set-key [f6] 'find-grep)
 (global-set-key [f7] 'replace-string)
 (global-set-key (kbd "C-f") 'forward-word)
@@ -73,7 +91,7 @@
 (global-set-key "\C-x=" 'align-regexp)
 (global-set-key "\C-x+" 'align-repeat)
 (global-set-key "\C-x:" 'erase-buffer)
- 
+
 ;; override killing emacs key
 (global-unset-key "\C-xc")
 (global-unset-key "\C-x\C-c")
@@ -105,29 +123,6 @@
   )
 (global-set-key [f10] 'jasper-compile)
 
-;;
-(autoload 'javascript-mode "javascript" nil t)
-(setq js-indent-level 2)
-
-(autoload 'js2-mode "js2" nil t)
-(add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
-(add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
-(add-to-list 'auto-mode-alist '("\\.hbs$" . html-mode))
-(add-to-list 'auto-mode-alist '("\\.ftl$" . html-mode))
-(add-to-list 'auto-mode-alist '("buildfile" . ruby-mode))
-
-(custom-set-variables
- '(js2-basic-offset 2)
- '(js2-bounce-indent-p t)
- '(js2-indent-on-enter-key t)
-)
-
-(setq javascript-indent-level 2)
-
-;;
-(setq c-basic-offset 2)
-
-
 ; =================
 
 ; Add css mode
@@ -142,31 +137,6 @@
      (cons '("\\.ftl\\'" . html-mode) auto-mode-alist))
 
 (setq css-indent-offset 2)
-
-;; For tabs configuration
-
-(require 'cc-mode)
-(defun my-build-tab-stop-list (width)
-  (let ((num-tab-stops (/ 80 width))
-	(counter 1)
-	(ls nil))
-    (while (<= counter num-tab-stops)
-      (setq ls (cons (* width counter) ls))
-      (setq counter (1+ counter)))
-    (set (make-local-variable 'tab-stop-list) (nreverse ls))))
-
-(defun my-c-mode-common-hook ()
-  (setq tab-width 2) ;; change this to taste, this is what K&R uses :)
-  (my-build-tab-stop-list tab-width)
-  (setq c-basic-offset tab-width)
-  (setq indent-tabs-mode nil)) ;; force only spaces for indentation
-(add-hook 'c-mode-common-hook 'my-c-mode-common-hook)
-
-;;xml mode
-;; (load "nxml-mode-20041004/rng-auto.el")
-;; (setq auto-mode-alist
-;;       (cons '("\\.\\(xml\\|xsl\\|rng\\|xhtml\\|xul\\|rdf\\)\\'" . nxml-mode)
-;;                     auto-mode-alist))
 
 (autoload 'css-mode "css-mode")
 (setq auto-mode-alist
@@ -186,31 +156,6 @@
       ["black" "tomato" "PaleGreen2" "gold1"
        "DeepSkyBlue1" "MediumOrchid1" "cyan" "white"])
 (setq ansi-color-map (ansi-color-make-color-map))
-
-;; enable EasyPG
-;; (require 'epa)
-;; (epa-file-enable)
-
-;; include slime
-;; (require 'setup-slime-js)
-;; (add-to-list 'load-path "/usr/share/emacs24/site-lisp/slime")
-;; (require 'slime)
-;; (add-hook 'lisp-mode-hook (lambda () (slime-mode t)))
-;; (add-hook 'inferior-lisp-mode-hook (lambda () (inferior-slime-mode t)))
-
-;; ;;
-;; (global-set-key [f7] 'slime-js-reload)
-;; (add-hook 'js2-mode-hook
-;;           (lambda ()
-;;             (slime-js-minor-mode 1)))
-
-;; ;; slime css
-;; (add-hook 'css-mode-hook
-;;           (lambda ()
-;;             (define-key css-mode-map "\M-\C-x" 'slime-js-refresh-css)
-;;             (define-key css-mode-map "\C-c\C-r" 'slime-js-embed-css)))
-
-
 
 ;; Toggle between split windows and a single window
 (defun toggle-windows-split()

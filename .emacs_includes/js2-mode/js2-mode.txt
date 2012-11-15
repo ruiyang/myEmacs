@@ -1,0 +1,9 @@
+source: git://github.com/mooz/js2-mode.git
+
+install:
+
+$ git clone git://github.com/mooz/js2-mode.git
+$ cd js2-mode
+$ emacs --batch -f batch-byte-compile js2-mode.el
+
+a promoted js2-mode with fix for the indention in js2 mode.
