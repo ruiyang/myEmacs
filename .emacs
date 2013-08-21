@@ -13,6 +13,26 @@
 (require 'dired+)
 (require 'dired-details)
 (dired-details-install)
+
+(let ((default-directory "~/liveaccounts/frontend/"))
+  (shell "ruby"))
+(let ((default-directory "~/liveaccounts/"))
+  (shell "1"))
+
+;; Ring navigation:
+;; M-g ]         Go to next search results buffer, restore its current search context
+;; M-g [         Ditto, but selects previous buffer.
+;;               Navigation is cyclic.
+;;
+;; Stack navigation:
+;; M-g -         Pop to previous search results buffer (kills top search results buffer)
+;; M-g _         Clear the search results stack (kills all grep-a-lot buffers!)
+;;
+;; Other:
+;; M-g =         Restore buffer and position where current search started
+(require 'grep-a-lot)
+(grep-a-lot-setup-keys)
+
 ;; Split windows in Emacs 22 compatible way
 (setq split-height-threshold nil)
 (setq split-width-threshold most-positive-fixnum)
@@ -24,12 +44,16 @@
 (menu-bar-mode -1)
 (setq inhibit-splash-screen t)
 
-
+;; window frame operations, maximize window with C-c (right|left)
 (windmove-default-keybindings)
+(when (fboundp 'winner-mode)
+  (winner-mode 1))
 
 (setq x-select-enable-clipboard t)
 
 (iswitchb-mode)
+(line-number-mode)
+(column-number-mode)
 
 ;; create an invisible backup directory and make the backups also invisable
 (defun make-backup-file-name (filename)
@@ -40,7 +64,7 @@
    (file-name-directory filename)))
 
 ;; Disable all version control
-(setq vc-handled-backends nil)
+;; (setq vc-handled-backends nil)
 
 
 ;; set indent size
@@ -67,7 +91,7 @@
 (add-to-list 'auto-mode-alist '("buildfile" . ruby-mode))
 
 ;; customize find-grep
-(setq grep-find-command "find . -name 'target' -prune -o -name 'webapp*assets' -prune -o -name 'public' -prune -o -name 'cache' -prune -o -name '*' ! -name '*~' ! -name 'old-*.js' ! -name 'old-*.css' ! -name 'ext*.js' ! -name 'yui*.js' ! -name '*.dll' ! -name '*.pdb' -print0 | xargs -0 grep -H -n ")
+(setq grep-find-command "find . -name 'target' -prune -o -name 'webapp*assets' -prune -o -name '.bundle' -prune -o -name 'public' -prune -o -name 'cache' -prune -o -name '*' ! -name '*~' ! -name 'old-*.js' ! -name 'old-*.css' ! -name 'ext*.js' ! -name 'yui*.js' ! -name '*.dll' ! -name '*.pdb' -print0 | xargs -0 grep -H -n ")
 
 (defun refresh-file ()
   (interactive)
@@ -83,6 +107,7 @@
 (global-set-key (kbd "C-b") 'backward-word)
 (global-set-key (kbd "M-f") 'forward-char)
 (global-set-key (kbd "M-b") 'backward-char)
+(global-set-key (kbd "M-d") 'delete-region)
 
 (define-key dired-mode-map "=" 'dired-diff)
 
@@ -119,7 +144,7 @@
 ;; Jasper hotcode replace
 (defun jasper-compile ()
   (interactive)
-  (shell-command "rm -fr /cygdrive/c/MYOB/liveaccounts/NikeOnline/target/classes/jasperReports/*; cp -fr /cygdrive/c/MYOB/liveaccounts/NikeOnline/src/main/resources/jasperReports/* /cygdrive/c/MYOB/liveaccounts/NikeOnline/target/classes/jasperReports")
+  (shell-command "rm -fr ~/liveaccounts/NikeOnline/target/classes/jasperReports/*; cp -fr ~/liveaccounts/NikeOnline/src/main/resources/jasperReports/* ~/liveaccounts/NikeOnline/target/classes/jasperReports")
   )
 (global-set-key [f10] 'jasper-compile)
 
@@ -213,3 +238,101 @@ by using nxml's indentation rules."
         (backward-char) (insert "\n"))
       (indent-region begin end))
     (message "Ah, much better!"))
+(defun format-json()
+  (interactive)
+  (let ((b (if mark-active (min (point) (mark)) (point-min)))
+        (e (if mark-active (max (point) (mark)) (point-max))))
+    (shell-command-on-region b e
+                             "python -mjson.tool" (current-buffer) t)))
+        
+(put 'erase-buffer 'disabled nil)
+
+;; ediff settings for git
+(require 'ediff)
+(defun ediff-current-buffer-revision () 
+  "Run Ediff to diff current buffer's file against VC depot. 
+Uses `vc.el' or `rcs.el' depending on `ediff-version-control-package'." 
+  (interactive) 
+  (let ((file (or (buffer-file-name) 
+          (error "Current buffer is not visiting a file")))) 
+(if (and (buffer-modified-p) 
+     (y-or-n-p (message "Buffer %s is modified. Save buffer? " 
+                (buffer-name)))) 
+    (save-buffer (current-buffer))) 
+(ediff-load-version-control) 
+(funcall 
+ (intern (format "ediff-%S-internal" ediff-version-control-package)) 
+ "" "" nil))) 
+(custom-set-variables
+ '(ediff-split-window-function (quote split-window-horizontally)))
+
+
+;; helpful commands
+
+(fset 'git-help
+   "echo \"EOL
+git log -p [branchname] // show details
+git log -p -1 (show last one with details)
+git log --graph --pretty=oneline --since='1 week ago'
+git show HEAD^
+git show HEAD~4
+git log -p --since='1 week ago' global.scss // see logs for a single file
+git tag v2.5 1b2e1d63ff //name a certain commit
+git diff HEAD~10:file-path HEAD:file-path // diff across revisions
+git add -i // add or remove files from index
+git reset --hard origin/master // hard is only needed if you want to discard your local changes
+git comment --amend // add some fix to your last commit, if you forget to pass checkstyle!
+git log --since='7 day' --name-only
+git log --diff-filter=D --summary --since='1 day ago'
+git log master --not --remotes //show changes that are not pushed yet
+git log -p -w -2 // ignore whitespace in comparison
+git log --follow // show history of deleting or renaming of the file
+git checkout [branch] [file] --- revert a file from a different branch
+git diff [branch1]:[file1] [branch2]:[file2]
+git checkout [version]~1 [file] //revert file from previous commit
+git checkout --ours filename.c
+git checkout --theirs filename.c
+git push origin <yourbranch>:<remotebranch>
+git push origin :<remotebranch> // delete remote branch
+git revert <commitid> // revert a commit
+git reset --soft HEAD^ // remove last commit
+EOL
+\"\C-m")
+
+(fset 'idea-keys
+      "echo \"EOL
+ Last Edition: Ctrl+Shift+Backspace
+ Search Symbol: C+S+M+Backspace
+ EOL
+\n\"\C-m")
+
+(fset 'vi-cheat
+      "echo \"EOL
+h	Move left
+j	Move down
+k	Move up
+l	Move right
+w	Move to next word
+W	Move to next blank delimited word
+b	Move to the beginning of the word
+B	Move to the beginning of blank delimted word
+e	Move to the end of the word
+E	Move to the end of Blank delimited word
+(	Move a sentence back
+)	Move a sentence forward
+{	Move a paragraph back
+}	Move a paragraph forward
+0	Move to the begining of the line
+$	Move to the end of the line
+1G	Move to the first line of the file
+G	Move to the last line of the file
+nG	Move to nth line of the file
+:n	Move to nth line of the file
+fc	Move forward to c
+Fc	Move back to c
+H	Move to top of screen
+M	Move to middle of screen
+L	Move to botton of screen
+%	Move to associated ( ), { }, [ ]
+ EOL
+\n\"\C-m")
