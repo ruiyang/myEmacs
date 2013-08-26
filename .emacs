@@ -8,16 +8,82 @@
 (package-initialize)
 
 ;; sudo related
+;; C-x C-f /sudo::/etc/hosts
 (require 'tramp)
 
 (require 'dired+)
 (require 'dired-details)
 (dired-details-install)
 
+(require 'ido)
+(setq ido-enable-last-directory-history nil)
+(setq ido-enable-flex-matching t)
+(setq ido-auto-merge-work-directories-length -1) ;; disable auto-merge
+;; (ido-everywhere t)
+(setq ido-create-new-buffer 'always)
+(setq ido-default-file-method 'selected-window)
+(setq ido-use-filename-at-point 'guess)
+(ido-mode t)
+(add-hook 'ido-setup-hook 
+          (lambda () 
+            (define-key ido-completion-map [tab] 'ido-complete)))
+
 (let ((default-directory "~/liveaccounts/frontend/"))
   (shell "ruby"))
 (let ((default-directory "~/liveaccounts/"))
   (shell "1"))
+
+;; Setup for org
+;; Set to the location of your Org files on your local system
+(setq org-directory "~/Dropbox/Personal/org")
+(setq org-todo-keywords
+      '((type "TODO(t)" "DOING(d!)" "PAUSED(p@!)" "|" "DONE(o!)" "CANCELED(c@!)")))
+
+(setq org-agenda-files (list "~/Dropbox/Personal/org"))
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(ediff-split-window-function (quote split-window-horizontally))
+ '(org-agenda-files (quote ("/home/liveaccounts/Dropbox/Personal/org/capture.org" "/home/liveaccounts/Dropbox/Personal/org/diary.org" "/home/liveaccounts/Dropbox/Personal/org/mobile-capture.org" "/home/liveaccounts/Dropbox/Personal/org/notes.org" "/home/liveaccounts/Dropbox/Personal/org/todo.org" "/home/liveaccounts/Dropbox/Personal/org/work.org")))
+ '(org-agenda-show-all-dates t)
+ '(org-agenda-skip-deadline-if-done t)
+ '(org-agenda-skip-scheduled-if-done t)
+ '(org-mobile-agendas (quote default)))
+
+(setq org-default-notes-file (concat org-directory "/capture.org"))
+(define-key global-map "\C-cc" 'org-capture)
+(define-key global-map "\C-ca" 'org-agenda)
+
+;; Setup for org
+;; Set to the name of the file where new notes will be stored
+(setq org-mobile-inbox-for-pull "~/Dropbox/Personal/org/mobile-capture.org")
+;; Set to <your Dropbox root directory>/MobileOrg.
+(setq org-mobile-directory "~/Dropbox/Apps/MobileOrg")
+(setq org-mobile-files '("~/Dropbox/Personal/org"))
+(setq org-mobile-force-id-on-agenda-items nil)
+
+(fset 'org-help
+      "echo \"EOL
+----Headline---------
+(S-)M-Left/Right     change line heading line (tree) level
+M-Up/Down            move tree up or down
+C-c C-c              toggle checkbox
+----TODO Operations--
+C-c .                insert a timestamp
+C-c C-s              add scheduled time
+C-c C-t              jump to a state
+----Capture----------
+C-c c                capture
+C-c C-c              save capture
+----Agenda View------
+C-c a a              agenda view of the current week
+C-c a t              all todo items
+C-u r                search the agenda matching a tag
+---------------------
+EOL
+\"\C-m")
 
 ;; Ring navigation:
 ;; M-g ]         Go to next search results buffer, restore its current search context
@@ -56,12 +122,17 @@
 (column-number-mode)
 
 ;; create an invisible backup directory and make the backups also invisable
-(defun make-backup-file-name (filename)
-  (defvar backups-dir "~/.backups/")
-  (make-directory backups-dir t)
-  (expand-file-name
-   (concat backups-dir "." (file-name-nondirectory filename) "~")
-   (file-name-directory filename)))
+(setq backup-directory-alist
+      `((".*" . ,temporary-file-directory)))
+(setq auto-save-file-name-transforms
+      `((".*" ,temporary-file-directory t)))
+
+;; (defun make-backup-file-name (filename)
+;;   (defvar backups-dir "~/.backups/")
+;;   (make-directory backups-dir t)
+;;   (expand-file-name
+;;    (concat backups-dir "." (file-name-nondirectory filename) "~")
+;;    (file-name-directory filename)))
 
 ;; Disable all version control
 ;; (setq vc-handled-backends nil)
@@ -89,9 +160,10 @@
 (add-to-list 'auto-mode-alist '("\\.hbs$" . html-mode))
 (add-to-list 'auto-mode-alist '("\\.ftl$" . html-mode))
 (add-to-list 'auto-mode-alist '("buildfile" . ruby-mode))
+(add-to-list 'auto-mode-alist '("Rakefile" . ruby-mode))
 
 ;; customize find-grep
-(setq grep-find-command "find . -name 'target' -prune -o -name 'webapp*assets' -prune -o -name '.bundle' -prune -o -name 'public' -prune -o -name 'cache' -prune -o -name '*' ! -name '*~' ! -name 'old-*.js' ! -name 'old-*.css' ! -name 'ext*.js' ! -name 'yui*.js' ! -name '*.dll' ! -name '*.pdb' -print0 | xargs -0 grep -H -n ")
+(setq grep-find-command "find . -name 'target' -prune -o -name 'webapp*assets' -prune -o -name '.bundle' -prune -o -name 'public' -prune -o -name 'cache' -prune -o -name '*' ! -name '*~' ! -name 'old-*.js' ! -name 'old-*.css' ! -name 'ext*.js' ! -name 'yui*.js' ! -name '*.dll' ! -name '*.pdb' ! -name 'development.log' -print0 | xargs -0 grep -H -n ")
 
 (defun refresh-file ()
   (interactive)
@@ -205,7 +277,6 @@
  (interactive)
  (if (window-minibuffer-p (selected-window))
     (keyboard-escape-quit)))
-(put 'upcase-region 'disabled t)
 
 ;; make lines unique recursively.
   (defun uniquify-all-lines-region (start end)
@@ -238,13 +309,7 @@ by using nxml's indentation rules."
         (backward-char) (insert "\n"))
       (indent-region begin end))
     (message "Ah, much better!"))
-(defun format-json()
-  (interactive)
-  (let ((b (if mark-active (min (point) (mark)) (point-min)))
-        (e (if mark-active (max (point) (mark)) (point-max))))
-    (shell-command-on-region b e
-                             "python -mjson.tool" (current-buffer) t)))
-        
+
 (put 'erase-buffer 'disabled nil)
 
 ;; ediff settings for git
@@ -263,14 +328,13 @@ Uses `vc.el' or `rcs.el' depending on `ediff-version-control-package'."
 (funcall 
  (intern (format "ediff-%S-internal" ediff-version-control-package)) 
  "" "" nil))) 
-(custom-set-variables
- '(ediff-split-window-function (quote split-window-horizontally)))
+
 
 
 ;; helpful commands
 
 (fset 'git-help
-   "echo \"EOL
+      "echo \"EOL
 git log -p [branchname] // show details
 git log -p -1 (show last one with details)
 git log --graph --pretty=oneline --since='1 week ago'
@@ -285,10 +349,10 @@ git comment --amend // add some fix to your last commit, if you forget to pass c
 git log --since='7 day' --name-only
 git log --diff-filter=D --summary --since='1 day ago'
 git log master --not --remotes //show changes that are not pushed yet
-git log -p -w -2 // ignore whitespace in comparison
-git log --follow // show history of deleting or renaming of the file
-git checkout [branch] [file] --- revert a file from a different branch
+git log -p -w -2 // ignore whitespace in 
+git log --follow // follow renamed files
 git diff [branch1]:[file1] [branch2]:[file2]
+git checkout [branch] [file] --- revert a file from a different branch
 git checkout [version]~1 [file] //revert file from previous commit
 git checkout --ours filename.c
 git checkout --theirs filename.c
@@ -306,33 +370,68 @@ EOL
  EOL
 \n\"\C-m")
 
-(fset 'vi-cheat
-      "echo \"EOL
-h	Move left
-j	Move down
-k	Move up
-l	Move right
-w	Move to next word
-W	Move to next blank delimited word
-b	Move to the beginning of the word
-B	Move to the beginning of blank delimted word
-e	Move to the end of the word
-E	Move to the end of Blank delimited word
-(	Move a sentence back
-)	Move a sentence forward
-{	Move a paragraph back
-}	Move a paragraph forward
-0	Move to the begining of the line
-$	Move to the end of the line
-1G	Move to the first line of the file
-G	Move to the last line of the file
-nG	Move to nth line of the file
-:n	Move to nth line of the file
-fc	Move forward to c
-Fc	Move back to c
-H	Move to top of screen
-M	Move to middle of screen
-L	Move to botton of screen
-%	Move to associated ( ), { }, [ ]
- EOL
-\n\"\C-m")
+;; format json
+(defun json-format ()
+  (interactive)
+  (let ((b (if mark-active (min (point) (mark)) (point-min)))
+        (e (if mark-active (max (point) (mark)) (point-max))))
+    (shell-command-on-region b e
+     "python -mjson.tool" (current-buffer) t)))
+
+;; useful linux command
+;; 'lsof -w -n -i tcp:8080'   list process using port 8080
+(put 'upcase-region 'disabled nil)
+
+(fset 'git-help-mo
+      (concat "echo \"\n" 
+              "git diff \n" 
+              "git diff --cached\ngit status\ngit log -p [branchname] // show details\n"
+              "git log -p -1 (show last one with details)\n"
+              "git log --since='1 day ago'\n"
+              "git show 44f1f96e23ecb835e4442bf464861231b2d96d7e\n"
+              "git log --graph --pretty=oneline --since='1 week ago'\n"
+              "git branch\n"
+              "git checkout [branch] // switch between branches\n"
+              "git merge [branch] // for conflicts, git diff (show conflicts), fix them, then git commit -a to commit them in. \n"
+              "git branch -d [name] // delete a branch\n"
+              "git show HEAD^\n"
+              "git show HEAD~4\n"
+              "git log -p --since='1 week ago' global.scss // see logs for a single file\n"
+              "git tag v2.5 1b2e1d63ff //name a certain commit\n"
+              "git diff HEAD~10:file-path HEAD:file-path // diff across revisions\n"
+              "git add -i // add or remove files from index\n"
+              "git reset --hard origin/master // hard is only needed if you want to discard your local changes\n"
+              "git comment --amend // add some fix to your last commit, if you forget to pass checkstyle!\n"
+              "git add -i\n"
+              "git log --since='7 day' --name-only\n"
+              "git log --diff-filter=D --summary --since='1 day ago'\n"
+              "git log master --not --remotes //show changes that are not pushed yet\n"
+              "git log --author=\"author-name\"\n"
+              "git log -p -w -2 // ignore whitespace in comparison\n"
+              "git checkout [branch] [file] --- revert a file from a different branch\n"
+              "git diff [branch1]:[file1] [branch2]:[file2]\n"
+              "git checkout [version]~1 [file] //revert file from previous commit\n"
+              "git branch -d branch-name    -- delete a local branch\n"
+              "git checkout --track -b production remoates/origin/production\n"
+              "git checkout --ours filename.c\n"
+              "git checkout --theirs filename.c\n"
+              "git add filename.c\n"
+              "git push origin <yourbranch>:<remotebranch>\n"
+              "git push origin :<remotebranch> // delete remote branch\n"
+              "git log origin/master..HEAD or git diff origin/master..HEAD // view changes that you are going to push\n"
+              "git revert <commitid> // revert a commit\n"
+              "git reset --soft HEAD^ // remove last commit\n"
+              "git reset --hard origin/master // sync with remote repo (to undo merge, for ex)\n"
+              "git commit --amend -m \"New commit message\" // edit last commit message \n"
+              "git log --follow // follow renamed files \n"
+              "git config --get remote.origin.url // get remote origin url \n"
+              "git remote set-url origin /data/repo/sheepy-repo // change remote origin url \n"
+              "git show HEAD^:main.cpp > old_main.cpp // checkout to a different file \n"
+              "git commit -F- <<EOF // multiple line comment\n"
+              "\"\C-m"))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
