@@ -82,6 +82,7 @@ C-c C-c              toggle checkbox
 C-c .                insert a timestamp
 C-c C-s              add scheduled time
 C-c C-t              jump to a state
+C-c C-q              insert a tag
 ----Capture----------
 C-c c                capture
 C-c C-c              save capture
