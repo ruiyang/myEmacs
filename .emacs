@@ -11,6 +11,7 @@
 ;; C-x C-f /sudo::/etc/hosts
 (require 'tramp)
 
+;; "(" ")" to hide and show details
 (require 'dired+)
 (require 'dired-details)
 (dired-details-install)
@@ -51,17 +52,25 @@
  '(org-agenda-skip-scheduled-if-done t)
  '(org-mobile-agendas (quote default)))
 
+(setq org-capture-templates
+      '(("t" "Todo" entry (file+headline (concat org-directory "/capture.org") "Tasks")
+             "* TODO %?\t\t%u\n")
+        ("j" "Journal" entry (file+datetree "~/org/journal.org")
+             "* %?\nEntered on %U\n  %i\n  %a")))
+
 (setq org-default-notes-file (concat org-directory "/capture.org"))
 (define-key global-map "\C-cc" 'org-capture)
 (define-key global-map "\C-ca" 'org-agenda)
 
-;; Setup for org
 ;; Set to the name of the file where new notes will be stored
-(setq org-mobile-inbox-for-pull "~/Dropbox/Personal/org/mobile-capture.org")
+(setq org-mobile-inbox-for-pull "~/Dropbox/Personal/org/mobile-inbox.org")
 ;; Set to <your Dropbox root directory>/MobileOrg.
 (setq org-mobile-directory "~/Dropbox/Apps/MobileOrg")
 (setq org-mobile-files '("~/Dropbox/Personal/org"))
 (setq org-mobile-force-id-on-agenda-items nil)
+
+(org-agenda-to-appt)
+(appt-activate)
 
 (fset 'org-help
       "echo \"EOL
