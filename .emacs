@@ -69,6 +69,58 @@
 (setq org-mobile-files '("~/Dropbox/Personal/org"))
 (setq org-mobile-force-id-on-agenda-items nil)
 
+;; automatic mobile sync using idle timer
+;; (defvar org-mobile-sync-timer nil)
+;; (defvar org-mobile-sync-idle-secs (* 60 10))
+;; (defun org-mobile-sync ()
+;;   (interactive)
+;;   (org-mobile-pull)
+;;   (org-mobile-push))
+;; (defun org-mobile-sync-enable ()
+;;   "enable mobile org idle sync"
+;;   (interactive)
+;;   (setq org-mobile-sync-timer
+;;         (run-with-idle-timer org-mobile-sync-idle-secs t
+;;                              'org-mobile-sync)));
+;; (defun org-mobile-sync-disable ()
+;;   "disable mobile org idle sync"
+;;   (interactive)
+;;   (cancel-timer org-mobile-sync-timer))
+;; (org-mobile-sync-enable)
+
+;; auto mobile sync
+;; Show a notification when a push has been completed
+
+;; Fork the work (async) of pushing to mobile
+;; https://gist.github.com/3111823 ASYNC org mobile push...
+(require 'gnus-async) 
+;; Define a timer variable
+(defvar org-mobile-push-timer nil
+  "Timer that `org-mobile-push-timer' used to reschedule itself, or nil.")
+(defun org-mobile-pull-push ()
+  (org-mobile-pull)
+  (org-mobile-push))
+;; Push to mobile when the idle timer runs out
+(defun org-mobile-sync (secs)
+  (when org-mobile-push-timer
+    (cancel-timer org-mobile-push-timer))
+  (setq org-mobile-push-timer
+        (run-with-idle-timer
+         (* 1 secs) nil 'org-mobile-pull-push)))
+;; After saving files, start an idle timer after which we are going to push 
+(add-hook 'after-save-hook 
+ (lambda () 
+   (if (or (eq major-mode 'org-mode) (eq major-mode 'org-agenda-mode))
+     (dolist (file (org-mobile-files-alist))
+       (if (string= (expand-file-name (car file)) (buffer-file-name))
+           (org-mobile-sync 10)))
+     )))
+
+;; Run before after work
+(run-at-time "17:00" 86400 '(lambda () (org-mobile-sync 1)))
+;; Run 1 minute after launch, and once a day after that.
+(run-at-time "1 min" 86400 '(lambda () (org-mobile-sync 1)))
+
 ;; function to show popup 
 (defun djcb-popup (title msg &optional icon sound)
   "Show a popup if we're on X, or echo it otherwise; TITLE is the title
@@ -105,8 +157,7 @@ a sound to be played"
  (defun djcb-appt-display (min-to-app new-time msg)
     (djcb-popup (format "Appointment in %s minute(s)" min-to-app) msg 
       "/usr/share/icons/gnome/32x32/status/appointment-soon.png"
-
-      "/usr/share/sounds/ubuntu/stereo/phone-incoming-call.ogg"))
+      "/usr/share/sounds/ubuntu/stereo/desktop-login.ogg"))
   (setq appt-disp-window-function (function djcb-appt-display))
 
 (fset 'org-help
