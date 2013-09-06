@@ -5,6 +5,9 @@
 (require 'package)
 (add-to-list 'package-archives
              '("marmalade" . "http://marmalade-repo.org/packages/") t)
+(add-to-list 'package-archives
+  '("melpa" . "http://melpa.milkbox.net/packages/") t)
+
 (package-initialize)
 
 ;; sudo related
@@ -48,6 +51,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(ediff-split-window-function (quote split-window-horizontally))
+ '(org-agenda-files (quote ("/home/liveaccounts/Dropbox/Personal/org/bible.org" "/home/liveaccounts/Dropbox/Personal/org/capture.org" "/home/liveaccounts/Dropbox/Personal/org/diary.org" "/home/liveaccounts/Dropbox/Personal/org/fb.org" "/home/liveaccounts/Dropbox/Personal/org/mobile-inbox.org" "/home/liveaccounts/Dropbox/Personal/org/notes.org" "/home/liveaccounts/Dropbox/Personal/org/rails.org" "/home/liveaccounts/Dropbox/Personal/org/todo.org" "/home/liveaccounts/Dropbox/Personal/org/work.org")))
  '(org-agenda-show-all-dates t)
  '(org-agenda-skip-deadline-if-done t)
  '(org-agenda-skip-scheduled-if-done t)
@@ -151,6 +155,7 @@ C-c C-s              add scheduled time
 C-c C-t              jump to a state
 C-c C-q              insert a tag
 C-c $                archive the tree to default archive file
+C-S <left>/<right>   different todo seq
 ----Capture----------
 C-c c                capture
 C-c C-c              save capture
