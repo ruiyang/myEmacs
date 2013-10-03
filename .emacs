@@ -19,15 +19,42 @@
 (require 'dired-details)
 (dired-details-install)
 
+;; grizz. the grizzl from elpa doesn't work
+;; (require 'grizzl)
+
+;; setup for projectile
+(require 'projectile)
+(projectile-global-mode)
+(setq projectile-completion-system 'grizzl)
+
+;; magit config
+(defcustom magit-use-highlights nil
+       "Use highlights in diff buffer."
+       :group 'magit
+       :type 'boolean)
+
+(defun magit-highlight-section ()
+    (let ((section (magit-current-section)))
+          (when (and (not (eq section magit-highlighted-section))
+                          magit-use-highlights))))
+
 (require 'ido)
-(setq ido-enable-last-directory-history nil)
-(setq ido-enable-flex-matching t)
-(setq ido-auto-merge-work-directories-length -1) ;; disable auto-merge
-;; (ido-everywhere t)
-(setq ido-create-new-buffer 'always)
-(setq ido-default-file-method 'selected-window)
-(setq ido-use-filename-at-point 'guess)
-(ido-mode t)
+;; use flx for ido
+(require 'flx-ido)
+(ido-mode 1)
+(ido-everywhere 1)
+(flx-ido-mode 1)
+;; disable ido faces to see flx highlights.
+;; (setq ido-use-faces nil)
+
+;; (setq ido-enable-last-directory-history nil)
+;; (setq ido-enable-flex-matching t)
+;; (setq ido-auto-merge-work-directories-length -1) ;; disable auto-merge
+;; ;; (ido-everywhere t)
+;; (setq ido-create-new-buffer 'always)
+;; (setq ido-default-file-method 'selected-window)
+;; (setq ido-use-filename-at-point 'guess)
+;; (ido-mode t)
 (add-hook 'ido-setup-hook 
           (lambda () 
             (define-key ido-completion-map [tab] 'ido-complete)))
@@ -51,7 +78,6 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(ediff-split-window-function (quote split-window-horizontally))
- '(org-agenda-files (quote ("/home/liveaccounts/Dropbox/Personal/org/bible.org" "/home/liveaccounts/Dropbox/Personal/org/capture.org" "/home/liveaccounts/Dropbox/Personal/org/diary.org" "/home/liveaccounts/Dropbox/Personal/org/fb.org" "/home/liveaccounts/Dropbox/Personal/org/mobile-inbox.org" "/home/liveaccounts/Dropbox/Personal/org/notes.org" "/home/liveaccounts/Dropbox/Personal/org/rails.org" "/home/liveaccounts/Dropbox/Personal/org/todo.org" "/home/liveaccounts/Dropbox/Personal/org/work.org")))
  '(org-agenda-show-all-dates t)
  '(org-agenda-skip-deadline-if-done t)
  '(org-agenda-skip-scheduled-if-done t)
@@ -95,7 +121,7 @@
 (add-hook 'after-save-hook
  (lambda () 
    (if (or (eq major-mode 'org-mode) (eq major-mode 'org-agenda-mode))
-     (dolist (file (org-mobbile-files-alist))
+     (dolist (file (org-mobile-files-alist))
        (if (string= (expand-file-name (car file)) (buffer-file-name))
            (org-mobile-sync 10)))
      )))
@@ -262,6 +288,7 @@ EOL
 (global-set-key (kbd "M-f") 'forward-char)
 (global-set-key (kbd "M-b") 'backward-char)
 (global-set-key (kbd "M-d") 'delete-region)
+(global-set-key (kbd "C-x g s") 'magit-status)
 
 (define-key dired-mode-map "=" 'dired-diff)
 
@@ -270,6 +297,11 @@ EOL
 (global-set-key "\C-x=" 'align-regexp)
 (global-set-key "\C-x+" 'align-repeat)
 (global-set-key "\C-x:" 'erase-buffer)
+
+(global-set-key (kbd "S-C-<left>") 'shrink-window-horizontally)
+(global-set-key (kbd "S-C-<right>") 'enlarge-window-horizontally)
+(global-set-key (kbd "S-C-<down>") 'shrink-window)
+(global-set-key (kbd "S-C-<up>") 'enlarge-window)
 
 ;; override killing emacs key
 (global-unset-key "\C-xc")
@@ -464,53 +496,13 @@ EOL
 ;; 'lsof -w -n -i tcp:8080'   list process using port 8080
 (put 'upcase-region 'disabled nil)
 
-(fset 'git-help-mo
-      (concat "echo \"\n" 
-              "git diff \n" 
-              "git diff --cached\ngit status\ngit log -p [branchname] // show details\n"
-              "git log -p -1 (show last one with details)\n"
-              "git log --since='1 day ago'\n"
-              "git show 44f1f96e23ecb835e4442bf464861231b2d96d7e\n"
-              "git log --graph --pretty=oneline --since='1 week ago'\n"
-              "git branch\n"
-              "git checkout [branch] // switch between branches\n"
-              "git merge [branch] // for conflicts, git diff (show conflicts), fix them, then git commit -a to commit them in. \n"
-              "git branch -d [name] // delete a branch\n"
-              "git show HEAD^\n"
-              "git show HEAD~4\n"
-              "git log -p --since='1 week ago' global.scss // see logs for a single file\n"
-              "git tag v2.5 1b2e1d63ff //name a certain commit\n"
-              "git diff HEAD~10:file-path HEAD:file-path // diff across revisions\n"
-              "git add -i // add or remove files from index\n"
-              "git reset --hard origin/master // hard is only needed if you want to discard your local changes\n"
-              "git comment --amend // add some fix to your last commit, if you forget to pass checkstyle!\n"
-              "git add -i\n"
-              "git log --since='7 day' --name-only\n"
-              "git log --diff-filter=D --summary --since='1 day ago'\n"
-              "git log master --not --remotes //show changes that are not pushed yet\n"
-              "git log --author=\"author-name\"\n"
-              "git log -p -w -2 // ignore whitespace in comparison\n"
-              "git checkout [branch] [file] --- revert a file from a different branch\n"
-              "git diff [branch1]:[file1] [branch2]:[file2]\n"
-              "git checkout [version]~1 [file] //revert file from previous commit\n"
-              "git branch -d branch-name    -- delete a local branch\n"
-              "git checkout --track -b production remoates/origin/production\n"
-              "git checkout --ours filename.c\n"
-              "git checkout --theirs filename.c\n"
-              "git add filename.c\n"
-              "git push origin <yourbranch>:<remotebranch>\n"
-              "git push origin :<remotebranch> // delete remote branch\n"
-              "git log origin/master..HEAD or git diff origin/master..HEAD // view changes that you are going to push\n"
-              "git revert <commitid> // revert a commit\n"
-              "git reset --soft HEAD^ // remove last commit\n"
-              "git reset --hard origin/master // sync with remote repo (to undo merge, for ex)\n"
-              "git commit --amend -m \"New commit message\" // edit last commit message \n"
-              "git log --follow // follow renamed files \n"
-              "git config --get remote.origin.url // get remote origin url \n"
-              "git remote set-url origin /data/repo/sheepy-repo // change remote origin url \n"
-              "git show HEAD^:main.cpp > old_main.cpp // checkout to a different file \n"
-              "git commit -F- <<EOF // multiple line comment\n"
-              "\"\C-m"))
+;; installed packages
+;; * projectile
+;; * helm
+;;   - C-c p f   find a file
+;;   - C-c p T   display a list all test files
+;; * helm-projectile
+;; * flx-ido
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
