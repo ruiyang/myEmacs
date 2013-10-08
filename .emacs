@@ -19,8 +19,8 @@
 (require 'dired-details)
 (dired-details-install)
 
-;; grizz. the grizzl from elpa doesn't work
-;; (require 'grizzl)
+;; Make Text mode the default mode for new buffers
+(setq-default major-mode 'text-mode)
 
 ;; setup for projectile
 (require 'projectile)
