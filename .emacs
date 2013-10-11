@@ -41,6 +41,7 @@
 (require 'ido)
 ;; use flx for ido
 (require 'flx-ido)
+(require 'ido-hacks)
 (ido-mode 1)
 (ido-everywhere 1)
 (flx-ido-mode 1)
