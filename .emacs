@@ -28,15 +28,9 @@
 (setq projectile-completion-system 'grizzl)
 
 ;; magit config
-(defcustom magit-use-highlights nil
-       "Use highlights in diff buffer."
-       :group 'magit
-       :type 'boolean)
-
-(defun magit-highlight-section ()
-    (let ((section (magit-current-section)))
-          (when (and (not (eq section magit-highlighted-section))
-                          magit-use-highlights))))
+(eval-after-load 'magit
+    ;; no highlight
+    (defun magit-highlight-section ())
 
 (require 'ido)
 ;; use flx for ido
