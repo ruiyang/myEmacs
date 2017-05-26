@@ -213,3 +213,6 @@ PATH=$PATH:$HOME/.rvm/bin:/cygdrive/c/Windows/system32:/cygdrive/c/Ruby187/lib/r
 export DISPLAY=:0.0
 export PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[33m\]\W\[\e[0m\]\n\$'
 export PAGER=cat
+export PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[33m\]\W\[\e[0m\]\n\$'
+export PAGER=cat
+export EDITOR="/Applications/Emacs.app/Contents/MacOS/bin/emacsclient"
